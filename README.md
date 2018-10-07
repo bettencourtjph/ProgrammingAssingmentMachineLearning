@@ -12,5 +12,8 @@ on the belt, forearm, arm, and dumbell of 6 participants. They were asked to per
 different ways. More information is available from the website here: 
 <a href="http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har">http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har</a>
  (see the section on the Weight Lifting Exercise Dataset).
- 
+
+### Methods
+
+See <a href="https://bettencourtjph.github.io/ProgrammingAssingmentMachineLearning/">https://bettencourtjph.github.io/ProgrammingAssingmentMachineLearning/</a>.
 
