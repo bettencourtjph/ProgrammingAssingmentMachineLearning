@@ -18,16 +18,89 @@ different ways. More information is available from the website here:
 <a href="http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har">http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har</a>
  (see the section on the Weight Lifting Exercise Dataset).</p>
 
-<h3>Data Preparation</h3>
+<h3>Data Input</h3>
 <p> The data is divided in to training data and test data. The training data consists of 19622 observations of 160 variables. The variable we want to predict is the "classe" variable,
-which is the way in which the barbell movement was performed. This variable can have 5 values: "A", "B", "C", "D", "E". The training data contained several variables with missing values 
-that were removed to allow an efficient implementation of the machine learning algorithms. After this operation, there were 53 variables to use as prediction features. </p>
-
-<h3>Data Fitting</h3>
-<p> Due to memory limitations the complete training set could not be used to train the Random Forest algorithm. A subset (p=0.5) of the original training set was used to train 
-the Random Forest model with k-fold cross-validation (using 5 folds). The results of the training step were: 
+which is the way in which the barbell movement was performed. This variable can have 5 values: "A", "B", "C", "D", "E". The training data is loaded with the read.table() function:
 <pre>
   <code>
+  dataTrain <- read.csv("pml-training.csv",na.strings = c("#DIV/0!",""))
+  </code>
+</pre>
+The "#DIV/0" values are set as NA.
+<p>
+
+<h3>Data Preparation</h3>
+<p>  All factor variables between cols 8 and 159 (the accelerometer variables) were converted to numeric:
+<pre>
+  <code>
+  for (i in 8:ncol(dataTrain)-1) {
+    colname <- names(dataTrain)[i]
+    if (is.factor(dataTrain[,i])) {
+      print(colname)
+      dataTrain[,i] <- as.numeric(as.character(dataTrain[,i]))
+    }
+  }
+  </code>
+</pre>
+
+The training data contained several variables with missing values that were removed to allow an efficient implementation of the machine learning algorithms:
+
+<pre>
+  <code>
+   ValidCols <- lapply(dataTrain, function(x) sum(is.na(x)))
+   ValidColNAmes <- names(ValidCols[ValidCols == 0])
+   train <- dataTrain[, ValidColNAmes]
+  </code>
+</pre>
+
+After this operation, there were 53 variables to use as prediction features. The ValidColNAmes variable is used to index in to the valid variable's columns.</p>
+
+<h3>Data Fitting</h3>
+<p> Due to memory limitations the complete training set could not be used to train the Random Forest algorithm. A subset (p=0.5) of the original training set was then created with:
+<pre>
+  <code>
+   InTrain<-createDataPartition(y=train$classe,p=0.5,list=FALSE)
+   train1<-train[InTrain,]
+</code>
+</pre>
+
+This subset was used to train the Random Forest model with k-fold cross-validation (using 5 folds):
+<pre>
+  <code>
+   rf_model<-train(classe~.,data=train1,method="rf",
+                trControl=trainControl(method="cv",number=5),
+                prox=TRUE)
+</code>
+</pre>
+
+The results of the training step were: 
+
+<pre>
+  <code>
+Random Forest 
+
+9812 samples
+  52 predictor
+   5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+No pre-processing
+Resampling: Cross-Validated (5 fold) 
+Summary of sample sizes: 7850, 7850, 7850, 7849, 7849 
+Resampling results across tuning parameters:
+
+  mtry  Accuracy   Kappa    
+   2    0.9858331  0.9820752
+  27    0.9863428  0.9827233
+  52    0.9792082  0.9736990
+
+Accuracy was used to select the optimal model using the largest value.
+The final value used for the model was mtry = 27.
+  </code>
+</pre>
+Note the use of cross-validation with k-fold (5 folds). Error estimates are given below:
+<pre>
+  <code>
+ randomForest(x = x, y = y, mtry = param$mtry, proximity = TRUE) 
                Type of random forest: classification
                      Number of trees: 500
 No. of variables tried at each split: 27
@@ -40,11 +113,56 @@ B   20 1869   10    0    0 0.015797788
 C    0   16 1687    8    0 0.014026885
 D    2    2   28 1574    2 0.021144279
 E    0    2    5    9 1788 0.008869180
+   </code>
+</pre>
+
+The error rate (OOB or out-of-bag) is 1.15%.
+
+</p>
+
+<h3>Prediction on the test set</h3>
+<p>
+The supplied test set was used to test the Random Forest model. The test set was treated in a similar way as the training set:
+
+<pre>
+  <code>
+  dataTest <- read.csv("pml-testing.csv",na.strings = c("#DIV/0!",""))
+
+  for (i in 8:ncol(dataTest)-1) {
+    colname <- names(dataTest)[i]
+    if (is.factor(dataTest[,i])) {
+      print(colname)
+      dataTest[,i] <- as.numeric(as.character(dataTest[,i]))
+    }
+  }
+
+  ValidCols2 <- lapply(dataTest, function(x) sum(is.na(x)))
+
+  ValidColNAmes2 <- names(ValidCols2[ValidCols2 == 0])
+  
+  test <- dataTest[, ValidColNAmes2]
+
+</code>
+</pre>
+The prediction step was:
+<pre>
+  <code>
+    pred <- predict(rf_model, newdata = test)
+  </code>
+</pre>  
+
+and the results are:
+
+<pre>
+  <code>
+    > pred
+    [1] B A B A A E D D A A B C B A E E A B B B
+    Levels: A B C D E
+		
   </code>
 </pre>
 
-</p>
  
- 
+</p> 
 </body>
 </html> 
